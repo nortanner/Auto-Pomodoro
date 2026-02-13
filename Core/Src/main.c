@@ -1115,32 +1115,31 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 
 	// TIM4: Pomodoro countdown (every 1 second)
 	if (htim->Instance == TIM4) {
+		HAL_GPIO_WritePin(BUZZ_GPIO_Port, BUZZ_Pin, GPIO_PIN_RESET);	// Turn off buzzer
 		// Only countdown when person is present
 		if (working) {
 			if (current_period > 0) {
-				HAL_GPIO_WritePin(BUZZ_GPIO_Port, BUZZ_Pin, GPIO_PIN_RESET);	// Turn off buzzer
 				current_period--;  // Decrement 1 second
-			} else {
-				// Timer expired! Switch between work and break
-				if (taking_break) {
-					// Break finished → Start work
-					taking_break = 0;
-					current_period = working_period * 60;
-				} else {
-					// Work finished → Start break
-					taking_break = 1;
-					current_period = break_period * 60;
-				}
+        // Did we just hit zero?
+            if (current_period == 0)
+            {
+                // Timer expired! Switch between work and break
+                if (taking_break) {
+                    // Break finished → Start work
+                    taking_break = 0;
+                    current_period = working_period * 60;
+                } else {
+                    // Work finished → Start break
+                    taking_break = 1;
+                    current_period = break_period * 60;
+                }
 
-				HAL_GPIO_WritePin(BUZZ_GPIO_Port, BUZZ_Pin, GPIO_PIN_SET);	// Turn on buzzer when switching periods
-
-			}
-		} else {
-			HAL_GPIO_WritePin(BUZZ_GPIO_Port, BUZZ_Pin, GPIO_PIN_RESET);	// Turn off power when system is idle
-
-		}
-		// If working == 0, timer is paused (current_period stays same)
-	}
+                // Beep once when switching periods
+                HAL_GPIO_WritePin(BUZZ_GPIO_Port, BUZZ_Pin, GPIO_PIN_SET);
+            }
+        }
+    }
+    // else: paused → keep current_period frozen, buzzer already off
 }
 
 void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim) {
