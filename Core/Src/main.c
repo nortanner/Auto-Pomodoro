@@ -68,7 +68,7 @@ uint32_t PWM_PERIOD = 999;  // Cache this value
 volatile uint32_t last_motion_time = 0;
 
 volatile uint8_t working = 0;	// 0 = not working, 1 = working
-volatile uint8_t taking_break = 0;	// 0 = not taking a break, 1 = taking a break
+volatile uint8_t taking_break = 0;// 0 = not taking a break, 1 = taking a break
 
 uint8_t edit_period = 0;// Make changes to timer durations 1 = working, 2 = break
 
@@ -120,8 +120,6 @@ void RenderCountdownDisplay(uint16_t minutes, uint16_t seconds, float progress);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-
-
 
 /* USER CODE END 0 */
 
@@ -746,7 +744,8 @@ void RenderCountdownDisplay(uint16_t minutes, uint16_t seconds, float progress) 
 	if (edit_period == 0) {
 		ring_color =
 				taking_break ?
-						(((PURPLE) >> 8) & 0x00FF)| (((PURPLE) & 0x00FF) << 8) :
+						(((PURPLE) >> 8) & 0x00FF)
+								| (((PURPLE) & 0x00FF) << 8) :
 						(((YELLOW) >> 8) & 0x00FF) | (((YELLOW) & 0x00FF) << 8); // Purple or Yellow
 
 	} else if (edit_period == 1) {
@@ -775,7 +774,7 @@ void RenderCountdownDisplay(uint16_t minutes, uint16_t seconds, float progress) 
 
 	if (edit_period == 0) {
 		FB_DrawStringCentered(cx, cy + 12, taking_break ? "BREAK" : "WORK",
-				WHITE, 0xFFFF);
+		WHITE, 0xFFFF);
 
 	} else if (edit_period == 1) {
 		FB_DrawStringCentered(cx, cy + 12, "WORK", WHITE, 0xFFFF);
@@ -1014,7 +1013,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 
 				// Check the width of the pulse for a reasonable range
 				if (width > US_MIN_WIDTH && width < US_MAX_WIDTH) {
-					float raw_distance = width * US_DISTANCE_CALC;	// Calculate the distance of the measurement
+					float raw_distance = width * US_DISTANCE_CALC; // Calculate the distance of the measurement
 					distance_cm = median_filter(raw_distance);
 				} else {
 					distance_cm = -1.0f;  // Out of range
@@ -1044,7 +1043,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 				&& (taking_break == 0)) {
 			working = 0;  // No person detected or timeout
 			if ((current_period / 60) < MIN_WORK_RESUME_TIME) {	// Reset to full work period if less than 5 minutes left
-				current_period = working_period * 60;	// Working period in seconds
+				current_period = working_period * 60;// Working period in seconds
 			}
 		}
 	}
@@ -1061,7 +1060,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 
 			if (led_state == LED_BREATHING_UP) {
 				led_duty_cycle += 0.0016f;  // Increment
-				if (led_duty_cycle >= LED_MAX_DUTY) {	// Tolerance to account for floating point rounding errors
+				if (led_duty_cycle >= LED_MAX_DUTY) { // Tolerance to account for floating point rounding errors
 					led_duty_cycle = 1.0f;
 					led_state = LED_BREATHING_DOWN;
 				}
@@ -1069,7 +1068,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 
 			if (led_state == LED_BREATHING_DOWN) {
 				led_duty_cycle -= 0.0016f;  // Decrement
-				if (led_duty_cycle <= LED_MIN_DUTY) {	// Tolerance to account for floating point rounding errors
+				if (led_duty_cycle <= LED_MIN_DUTY) { // Tolerance to account for floating point rounding errors
 					led_duty_cycle = 0.2f;
 					led_state = LED_BREATHING_UP;
 				}
@@ -1115,31 +1114,32 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 
 	// TIM4: Pomodoro countdown (every 1 second)
 	if (htim->Instance == TIM4) {
-		HAL_GPIO_WritePin(BUZZ_GPIO_Port, BUZZ_Pin, GPIO_PIN_RESET);	// Turn off buzzer
+		HAL_GPIO_WritePin(BUZZ_GPIO_Port, BUZZ_Pin, GPIO_PIN_RESET);// Turn off buzzer
 		// Only countdown when person is present
 		if (working) {
 			if (current_period > 0) {
 				current_period--;  // Decrement 1 second
-        // Did we just hit zero?
-            if (current_period == 0)
-            {
-                // Timer expired! Switch between work and break
-                if (taking_break) {
-                    // Break finished → Start work
-                    taking_break = 0;
-                    current_period = working_period * 60;
-                } else {
-                    // Work finished → Start break
-                    taking_break = 1;
-                    current_period = break_period * 60;
-                }
+				// Did we just hit zero?
+				if (current_period == 0) {
+					// Timer expired! Switch between work and break
+					if (taking_break) {
+						// Break finished → Start work
+						taking_break = 0;
+						current_period = working_period * 60;
+					} else {
+						// Work finished → Start break
+						taking_break = 1;
+						current_period = break_period * 60;
+					}
 
-                // Beep once when switching periods
-                HAL_GPIO_WritePin(BUZZ_GPIO_Port, BUZZ_Pin, GPIO_PIN_SET);
-            }
-        }
-    }
-    // else: paused → keep current_period frozen, buzzer already off
+					// Beep once when switching periods
+					HAL_GPIO_WritePin(BUZZ_GPIO_Port, BUZZ_Pin, GPIO_PIN_SET);
+				}
+			}
+		}
+		// else: paused → keep current_period frozen, buzzer already off
+	}
+
 }
 
 void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim) {
@@ -1182,7 +1182,8 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
 
 	if (GPIO_Pin == B_MODE_Pin) {
 
-		if (now - last_press < 250) return;  // 250ms debounce
+		if (now - last_press < 250)
+			return;  // 250ms debounce
 		last_press = now;
 
 		if (edit_period < 2) {
@@ -1200,7 +1201,8 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
 
 	if (GPIO_Pin == B_UP_Pin) {
 
-		if (now - last_press < 250) return;  // 250ms debounce
+		if (now - last_press < 250)
+			return;  // 250ms debounce
 		last_press = now;
 
 		switch (edit_period) {
@@ -1218,7 +1220,8 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
 
 	if (GPIO_Pin == B_DOWN_Pin) {
 
-		if (now - last_press < 250) return;  // 250ms debounce
+		if (now - last_press < 250)
+			return;  // 250ms debounce
 		last_press = now;
 
 		switch (edit_period) {
